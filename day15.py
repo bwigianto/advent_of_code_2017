@@ -1,4 +1,3 @@
-
 def generate(prev, c):
   return prev * c % 2147483647
 
@@ -8,18 +7,13 @@ def generate_a(prev):
 def generate_b(prev):
   return generate(prev, 48271)
 
-def generator_func(x, n, gen):
+def generator_func(x, gen, where):
   prev = x
-  for i in range(n):
+  while True:
     curr = gen(prev)
     prev = curr
-    yield curr
-
-def generator_a(x, n):
-  return generator_func(x, n, generate_a)
-
-def generator_b(x, n):
-  return generator_func(x, n, generate_b)
+    if where(curr):
+        yield curr
 
 def lowest16(n):
   return "{0:016b}".format(n)[-16:]
@@ -29,8 +23,8 @@ def lowest16_match(a, b):
 
 def count_matches(n):
   ct = 0
-  a = generate_a(512)
-  b = generate_b(191)
+  a = generate_a(65)
+  b = generate_b(8921)
   for i in range(n):
     if lowest16_match(a, b):
       ct += 1
@@ -39,13 +33,20 @@ def count_matches(n):
   return ct
 
 def count_matches2(n):
-  
+  gen_a = generator_func(512, generate_a, lambda x: x % 4 == 0)
+  gen_b = generator_func(191, generate_b, lambda x: x % 8 == 0)
+  ct = 0
+  for i in xrange(n-1):
+    a = next(gen_a)
+    b = next(gen_b)
+    if lowest16_match(a, b):
+      ct += 1
+  return ct
 
 def part1():
   print(count_matches(40000000))
 
 def part2():
-  return [x for x in generator_a(65, 10)]
-  
+  print(count_matches2(5000000))
 
-print(part2())
+print part2()

@@ -1,15 +1,8 @@
 import sys
 
-n = 2
-steps = 1
+n = 5
 def roots(nodes_to_parents):
-    out = set()
-    for node, parents in nodes_to_parents.items():
-        parent = parents[0]
-        while parent in nodes_to_parents:
-            parent = nodes_to_parents[parent][0]
-        out.add(parent[0])
-    return list(out)
+    return set(node for node, parents in nodes_to_parents.items() if not parents)
 
 nodes_to_children = {}
 nodes_to_parents = {}
@@ -31,35 +24,48 @@ for line in sys.stdin:
     if letter not in nodes_to_parents:
         nodes_to_parents[letter] = []
     if letter not in nodes_to_work:
-        nodes_to_work[letter] = ord(letter) - 64
+        nodes_to_work[letter] = ord(letter) - 4
     if child_letter not in nodes_to_work:
-        nodes_to_work[child_letter] = ord(child_letter) - 64
+        nodes_to_work[child_letter] = ord(child_letter) - 4
 
-def fulfilled(node, visited, nodes_to_parents):
-    if node not in nodes_to_parents:
-        return True
-    return all(x in visited for x in nodes_to_parents[node])
+def fulfilled(node, finished, nodes_to_parents):
+    return all(x in finished for x in nodes_to_parents[node])
 
-def ready(to_visit, visited, nodes_to_parents):
-    out = []
-    for i in range(len(to_visit)):
-        node = to_visit[i]
-        if fulfilled(node, visited, nodes_to_parents):
-            out.append(to_visit.pop(i))
-    return out
+def ready(curr_nodes, to_visit, finished, nodes_to_parents):
+    i = 0
+    while len(curr_nodes) < n and i < len(to_visit):
+        if fulfilled(to_visit[i], finished, nodes_to_parents):
+            curr_nodes.append(to_visit.pop(i))
+        else:
+            i += 1
+
+def work(nodes, nodes_to_work):
+    dt = min(nodes_to_work[node] for node in nodes)
+    for node in nodes:
+        nodes_to_work[node] -= dt
+    return dt
 
 roots = roots(nodes_to_parents)
-print(roots)
 to_visit = sorted(roots)
 order = []
-visited = set(roots)
+finished = set()
+t = 0
+curr_nodes = []
 while len(to_visit) > 0:
-    curr = ready(to_visit, visited, nodes_to_parents)
-    visited.add(curr)
-    order.append(curr)
-    for child in nodes_to_children[curr]:
-        if child not in visited and child not in set(to_visit):
-            to_visit.append(child)
+    ready(curr_nodes, to_visit, finished, nodes_to_parents)
+    t += work(curr_nodes, nodes_to_work)
+    i = 0
+    while i < len(curr_nodes):
+        node = curr_nodes[i]
+        if nodes_to_work[node] == 0:
+            finished.add(node)
+            order.append(node)
+            curr_nodes.pop(i)
+            i -= 1
+            for child in nodes_to_children[node]:
+                if child not in finished and child not in set(to_visit):
+                    to_visit.append(child)
+        i += 1
     to_visit = sorted(to_visit)
 
-print(''.join(order))
+print(t)
